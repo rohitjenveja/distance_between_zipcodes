@@ -1,1 +1,52 @@
-Hello World - From form.html
+<html>
+  <head>
+    <title>Distance between two points.</title>
+  </head>
+  <body>
+
+    {{error_happened}} 
+    <form method="GET" action="/">
+    
+    <table>
+      <tr>
+        <td>Departure: </td> 
+        <td><input type="text" name="departure" size="80">
+        </td>
+      </tr>
+      <tr>
+        <td>Destination:</td>
+        <td><input type="text" name="destination" size="80">
+        </td>  
+    </tr>
+    <tr>
+      <td><input type="submit" text="submit"></td>
+      <td>    <a href="./?departure=580+California+St+San+Francisco+CA+94104&destination=3333+Coyote+Hill+Rd%2C+Palo+Alto%2C+CA+94304">580 California St, SF to 3333 Coyote hill, Palo Alto</a>
+      </td>
+    </tr>  
+    </form>
+    {%if geo_data %}
+    <table>
+      <tr>
+        <td><b>Destination coordinates:</b></td>
+        <td>{{geo_data.destination_coordinates}}</td>
+      </tr>
+      <tr>
+        <td><b>Departure coordinates:</b></td>
+        <td>{{geo_data.departure_coordinates}}</td>
+      </tr>
+      <tr>
+        <td><b>Zip codes to go through:</b></td>
+        <td>
+            {% for zip_code in geo_data.zip_codes %}
+              {{zip_code}}
+            {% endfor %}
+        </td>
+      </tr>
+      <tr>
+        <td>image plot</td>
+        <td>      <img src="./images/{{geo_data.image_path}}"></td>
+      </tr>
+    </table>
+    {% endif %}
+  </body>
+</html>

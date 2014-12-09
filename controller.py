@@ -13,9 +13,8 @@ import geo_helper
 
 import logging
 
-from pygeocoder import Geocoder
+import pygeocoder
 import shapely
-from third_party.pygmaps import pygmaps as gmap
 
 
 application = Flask(__name__)
@@ -32,10 +31,10 @@ class InvalidAddress(Error):
 def index():
   """Main handler that prompts user for departure and destination.
 
-  Valid GET arguments:
+  Valid GET arguments: 
     departure: The full address from which to depart.
     destination: The desired destination.
-
+ 
   Processes user request if all necessary information is available.
   If an invalid address is passed, HandleException is called and may
   raise an exception or ask the user to try again.
@@ -45,29 +44,30 @@ def index():
   geo_data = {}
   # Use pygeocoder to validate and get precise longitude and latitude.
   if departure and destination:
-    departure = Geocoder.geocode(request.args.get('departure'))
-    destination = Geocoder.geocode(request.args.get('destination'))
-    logging.info("Depature: %s", departure)
-    logging.info("Destination: %s", destination)
+    try:
+      departure = pygeocoder.Geocoder.geocode(request.args.get('departure'))
+      destination = pygeocoder.Geocoder.geocode(request.args.get('destination'))
+    except pygeocoder.GeocoderError:
+      logging.warn("Unable to get geocode data for %s, %s", 
+                   departure, destination)
+      return HandleException(
+          InvalidAddress, "User has entered an invalid address.",
+          'form.html')
+    logging.info("Depature: %s", departure.coordinates)
+    logging.info("Destination: %s", destination.coordinates)
 
-    if departure.valid_address and destination.valid_address:
-      # Process the request and return a dict to populate in to the template.
-      geo_data = {
-                  'departure': departure.formatted_address,
-                  'destination': destination.formatted_address,
-                  'departure_coordinates': departure.coordinates,
-                  'destination_coordinates': destination.coordinates,
-                 }
-      zips, image_path = geo_helper.ProcessRequest(
-          departure.coordinates,
-          destination.coordinates)
-      geo_data["zip_codes"] = zips
-      geo_data["image_path"] = image_path
-    else:
-      # If in dev mode, raise the exception. Otherwise, show form.html.
-      HandleException(InvalidAddress, "User has entered an invalid address.",
-                      'form.html')
-  # Prompt user with form
+    # Process the request and return a dict to populate in to the template.
+    geo_data = {
+                'departure': departure.formatted_address,
+                'destination': destination.formatted_address,
+                'departure_coordinates': departure.coordinates,
+                'destination_coordinates': destination.coordinates,
+               }
+    zips, image_path = geo_helper.ProcessRequest(
+        departure.coordinates,
+        destination.coordinates)
+    geo_data["zip_codes"] = zips
+    geo_data["image_path"] = image_path
   return render_template('form.html', geo_data=geo_data)
 
 
@@ -98,7 +98,7 @@ def HandleException(exception_to_raise, error_reason, template):
   if application.debug:
     raise exception_to_raise(error_reason)
   else:
-    render_template(template, error_happened=error_reason)
+    render_template(template, error_happened=error_reason)   
 
 
 if __name__ == '__main__':
