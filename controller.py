@@ -5,9 +5,9 @@
 __author__ = ("Rohit Jenveja - rjenveja@gmail.com")
 
 from flask import Flask
-from flask import make_response
 from flask import render_template
 from flask import request, url_for
+from flask import send_file
 
 import geo_helper
 
@@ -31,10 +31,10 @@ class InvalidAddress(Error):
 def index():
   """Main handler that prompts user for departure and destination.
 
-  Valid GET arguments: 
+  Valid GET arguments:
     departure: The full address from which to depart.
     destination: The desired destination.
- 
+
   Processes user request if all necessary information is available.
   If an invalid address is passed, HandleException is called and may
   raise an exception or ask the user to try again.
@@ -48,7 +48,7 @@ def index():
       departure = pygeocoder.Geocoder.geocode(request.args.get('departure'))
       destination = pygeocoder.Geocoder.geocode(request.args.get('destination'))
     except pygeocoder.GeocoderError:
-      logging.warn("Unable to get geocode data for %s, %s", 
+      logging.warn("Unable to get geocode data for %s, %s",
                    departure, destination)
       return HandleException(
           InvalidAddress, "User has entered an invalid address.",
@@ -75,9 +75,7 @@ def index():
 def images(path):
   """Loads images from local file system."""
   fullpath = "./" + path
-  resp = make_response(open(fullpath).read())
-  resp.content_type = "image/png"
-  return resp
+  return send_file(fullpath, mimetype='image/png')
 
 
 def HandleException(exception_to_raise, error_reason, template):
@@ -98,7 +96,7 @@ def HandleException(exception_to_raise, error_reason, template):
   if application.debug:
     raise exception_to_raise(error_reason)
   else:
-    render_template(template, error_happened=error_reason)   
+    render_template(template, error_happened=error_reason)
 
 
 if __name__ == '__main__':
